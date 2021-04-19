@@ -1,0 +1,25 @@
+[package]
+name = "scroll_strategist_cli"
+version = "0.0.0"
+authors = ["deer <capreolina@protonmail.ch>"]
+edition = "2018"
+description = "A minimal & simplistic CLI to the scroll_strategist algorithms"
+repository = "https://codeberg.org/deer/scroll_strategist_cli"
+readme = "README.md"
+keywords = ["maplestory", "scroll", "strategy", "dynamic-programming", "cli"]
+categories = ["games", "command-line-interface"]
+license = "AGPL-3.0-or-later"
+
+[dependencies]
+scroll_strategist = { path = "../scroll_strategist" }
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = "fat"
+debug-assertions = false
+codegen-units = 1
+panic = "abort"
+incremental = false
+overflow-checks = false

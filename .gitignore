@@ -1,0 +1,8 @@
+/target
+Cargo.lock
+
+# Text editing stuff
+.vscode/
+
+# scripts
+build.sh
