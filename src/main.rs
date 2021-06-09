@@ -2,21 +2,81 @@
 #![deny(clippy::all)]
 #![deny(deprecated)]
 
+mod json;
+mod opts;
+
+use clap::Clap;
 use scroll_strategist::{
     dfs::solve_p, graph::ItemState, scroll::Scroll, stats::Stats,
 };
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    process,
+};
 
 fn main() -> io::Result<()> {
+    let cl_opts: opts::Opts = opts::Opts::parse();
+
+    let stdin = io::stdin();
+    let mut input_buf = String::new();
+
+    let (mut item_state, scrolls, goal) = if let Some(json_path) = cl_opts.json
+    {
+        json::read_from_file(json_path)?
+    } else {
+        if cl_opts.noninteractive {
+            eprintln!(
+                "`--noninteractive` was specified, but `--json` was not!",
+            );
+
+            process::exit(1);
+        }
+
+        interactive_input(&stdin, &mut input_buf)?
+    };
+
+    solve_p(&mut item_state, &scrolls, &goal);
+
+    if cl_opts.noninteractive {
+        if let ItemState::Exists {
+            slots: _,
+            stats: _,
+            child,
+        } = item_state
+        {
+            if let Some(child) = child {
+                println!(
+                    "Probability of success: {:.3}%",
+                    child.p_goal * 100.0,
+                );
+                println!(
+                    "Expected cost (scrolls only): {:.1}",
+                    child.exp_cost,
+                );
+                println!(
+                    "Next scroll to use: {:.0}%",
+                    child.scroll().p_suc * 100.0,
+                );
+            }
+        }
+
+        Ok(())
+    } else {
+        print!("=== Results ===");
+        interactive_scrolling(&item_state, &stdin, &mut input_buf)
+    }
+}
+
+fn interactive_input<'a>(
+    stdin: &io::Stdin,
+    input_buf: &mut String,
+) -> io::Result<(ItemState<'a>, Vec<Scroll>, Stats)> {
     println!(
         "=== Welcome to scroll_strategist_cli! ===
 Just answer some questions about what you’re scrolling, what you’re scrolling
 it with, and what you want your scrolling strategy to optimise for, and
 scroll_strategist can work its magic~\n",
     );
-
-    let stdin = io::stdin();
-    let mut input_buf = String::new();
 
     let stats = {
         let mut stats: Option<Stats> = None;
@@ -25,7 +85,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Stats: ");
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             let mut stats_vec = Vec::new();
             for maybe_stat in input_buf
@@ -52,7 +112,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Slots remaining: ");
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             slots = input_buf.trim().parse().ok();
         }
@@ -70,7 +130,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Scroll {} %: ", scrolls.len() + 1);
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             let trimmed = input_buf.trim();
             if trimmed.is_empty() && !scrolls.is_empty() {
@@ -88,7 +148,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Scroll {} dark?: ", scrolls.len() + 1);
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             input_buf.make_ascii_lowercase();
             match input_buf.trim() {
@@ -111,7 +171,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Scroll {} cost: ", scrolls.len() + 1);
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             if let Ok(cost) = input_buf.trim().parse() {
                 scroll.cost = cost;
@@ -125,7 +185,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Scroll {} stats: ", scrolls.len() + 1);
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             let mut stats_vec = Vec::new();
             for maybe_stat in input_buf
@@ -157,7 +217,7 @@ scroll_strategist can work its magic~\n",
 
             print!("Goal: ");
             io::stdout().flush()?;
-            stdin.read_line(&mut input_buf)?;
+            stdin.read_line(input_buf)?;
 
             let mut stats_vec = Vec::new();
             for maybe_stat in input_buf
@@ -180,12 +240,9 @@ scroll_strategist can work its magic~\n",
         goal.unwrap_or_else(|| unreachable!())
     };
 
-    let mut item_state = ItemState::new_exists(slots, stats);
+    println!();
 
-    solve_p(&mut item_state, &scrolls, &goal);
-
-    print!("\n=== Results ===");
-    interactive_scrolling(&item_state, &stdin, &mut input_buf)
+    Ok((ItemState::new_exists(slots, stats), scrolls, goal))
 }
 
 fn interactive_scrolling(
@@ -235,6 +292,8 @@ fn interactive_scrolling(
                             }
                         }
 
+                        println!("\nFinal stats: {}", stats);
+
                         break;
                     }
                     "no" | "n" | "false" => {
@@ -252,6 +311,8 @@ fn interactive_scrolling(
                                 }
                             }
                         }
+
+                        println!("\nFinal stats: {}", stats);
 
                         break;
                     }

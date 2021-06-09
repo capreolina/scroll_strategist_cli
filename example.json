@@ -1,0 +1,11 @@
+{
+  "stats": [5],
+  "slots": 9,
+  "scrolls": [
+    { "percent": 10, "dark": false, "cost": 400000, "stats": [5] },
+    { "percent": 30, "dark": true, "cost": 5600000, "stats": [5] },
+    { "percent": 60, "dark": false, "cost": 450000, "stats": [2] },
+    { "percent": 70, "dark": true, "cost": 400000, "stats": [2] }
+  ],
+  "goal": [20]
+}
