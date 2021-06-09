@@ -180,24 +180,94 @@ scroll_strategist can work its magic~\n",
         goal.unwrap_or_else(|| unreachable!())
     };
 
-    let mut init_state = ItemState::new_exists(slots, stats);
+    let mut item_state = ItemState::new_exists(slots, stats);
 
-    solve_p(&mut init_state, &scrolls, &goal);
+    solve_p(&mut item_state, &scrolls, &goal);
+
+    print!("\n=== Results ===");
+    interactive_scrolling(&item_state, &stdin, &mut input_buf)
+}
+
+fn interactive_scrolling(
+    item_state: &ItemState,
+    stdin: &io::Stdin,
+    input_buf: &mut String,
+) -> io::Result<()> {
+    println!();
 
     if let ItemState::Exists {
         slots: _,
-        stats: _,
+        stats,
         child,
-    } = init_state
+    } = item_state
     {
-        println!("\n=== Results ===");
-
         if let Some(child) = child {
             println!("Probability of success: {:.3}%", child.p_goal * 100.0);
             println!("Expected cost (scrolls only): {:.1}", child.exp_cost);
+            println!(
+                "Next scroll to use: {:.0}%",
+                child.scroll().p_suc * 100.0,
+            );
+
+            loop {
+                input_buf.clear();
+
+                print!("Did the scroll pass? [y/n/b]: ");
+                io::stdout().flush()?;
+                stdin.read_line(input_buf)?;
+
+                let outcomes = child.outcomes();
+                input_buf.make_ascii_lowercase();
+                match input_buf.trim() {
+                    "yes" | "y" | "true" => {
+                        for outcome in outcomes {
+                            if let ItemState::Exists {
+                                slots: _,
+                                stats: outcome_stats,
+                                child: _,
+                            } = outcome
+                            {
+                                if outcome_stats != stats {
+                                    return interactive_scrolling(
+                                        outcome, stdin, input_buf,
+                                    );
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    "no" | "n" | "false" => {
+                        for outcome in outcomes {
+                            if let ItemState::Exists {
+                                slots: _,
+                                stats: outcome_stats,
+                                child: _,
+                            } = outcome
+                            {
+                                if outcome_stats == stats {
+                                    return interactive_scrolling(
+                                        outcome, stdin, input_buf,
+                                    );
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    "boom" | "b" | "boomed" => {
+                        println!("\nR.I.P. :(");
+
+                        return Ok(());
+                    }
+                    _ => (),
+                }
+            }
         } else {
-            println!("Impossible!");
+            println!("Final stats: {}", stats);
         }
+    } else {
+        println!("R.I.P. :(");
     }
 
     Ok(())
