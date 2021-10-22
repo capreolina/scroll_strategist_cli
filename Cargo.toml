@@ -11,10 +11,10 @@ categories = ["games", "command-line-interface"]
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-clap = "3.0.0-beta.2"
+clap = "3.0.0-beta.5"
 scroll_strategist = { path = "../scroll_strategist" }
-serde = { version = "1.0.126", features = ["derive"] }
-serde_json = "1.0.64"
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.68"
 
 [profile.release]
 opt-level = 3

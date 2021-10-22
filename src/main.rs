@@ -5,7 +5,7 @@
 mod json;
 mod opts;
 
-use clap::Clap;
+use clap::Parser;
 use scroll_strategist::{
     dfs::solve_p, graph::ItemState, scroll::Scroll, stats::Stats,
 };

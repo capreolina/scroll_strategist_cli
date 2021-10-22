@@ -1,6 +1,6 @@
-use clap::Clap;
+use clap::Parser;
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(version = "0.1.0", author = "deer <capreolina@protonmail.ch>")]
 pub struct Opts {
     #[clap(short, long)]
