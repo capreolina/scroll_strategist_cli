@@ -11,7 +11,7 @@ categories = ["games", "command-line-interface"]
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-clap = "3.0.0-beta.5"
+clap = { version = "3.0.0-rc.0", features = ["derive"] }
 scroll_strategist = { path = "../scroll_strategist" }
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.68"
