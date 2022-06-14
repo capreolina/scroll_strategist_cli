@@ -9,10 +9,7 @@ use clap::Parser;
 use scroll_strategist::{
     dfs::solve_p, graph::ItemState, scroll::Scroll, stats::Stats,
 };
-use std::{
-    io::{self, Write},
-    process,
-};
+use std::io::{self, Write};
 
 fn main() -> io::Result<()> {
     let cl_opts: opts::Opts = opts::Opts::parse();
@@ -24,14 +21,6 @@ fn main() -> io::Result<()> {
     {
         json::read_from_file(json_path)?
     } else {
-        if cl_opts.noninteractive {
-            eprintln!(
-                "`--noninteractive` was specified, but `--json` was not!",
-            );
-
-            process::exit(1);
-        }
-
         interactive_input(&stdin, &mut input_buf)?
     };
 
